@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.css" rel="stylesheet" type="text/css" /> -->
+        <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+        <title>ChatGL</title>
+    </head>
+    <body>
+        <div id="container">
+            <label for="prompt">Describe a shader:</label>
+            <textarea id="prompt" class="textarea"></textarea>
+            <button id="ask" class="btn">ask</button>
+            <div class="tab-container">
+                <ul role="tablist" class="tabs">
+                    <li>
+                        <button tabindex="0" role="tab" aria-selected="true" class='tab tab-active'>
+                            Shader
+                        </button>
+                    </li>
+                    <li>
+                        <button tabindex="-1" role="tab" aria-selected="false" class='tab'>
+                            Texture
+                        </button>
+                    </li>
+                </ul>
+                <button id="compile">compile</button>
+            </div>
+            <label for="editor">Shader output:</label>
+            <div id="editor-parent">
+                <div id="editor" tabindex="0"></div>
+            </div>
+            <label for="image">Upload texture:</label>
+            <input type="file" id="image" accept="image/*"/>
+        </div>
+        <button id="resize" tabindex="0" aria-label="Resize editor and canvas"></button>
+        <canvas id="canvas"></canvas>
+        <script type="module" src="src/index.ts" defer></script>
+    </body>
+</html>
