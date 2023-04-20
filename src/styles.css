@@ -6,6 +6,22 @@ html, body {
     flex-direction: row;
 }
 
+ol,
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+pre {
+    white-space: pre-wrap;     
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;    
+    white-space: -o-pre-wrap;  
+    word-wrap: break-word;     
+    overflow: auto;
+}
+
 #container {
     box-sizing: border-box;
     position: relative;
@@ -18,10 +34,10 @@ html, body {
     padding: 1rem;
 }
 
-#editor-parent {
-    position: relative;
-    max-height: calc(100vh - 200px);
-    overflow: auto;
+#editor {
+    /* position: relative; */
+    /* max-height: calc(100vh - 200px); */
+    overflow: hidden;
 }
 
 .codemirror-fullheight {
@@ -30,15 +46,16 @@ html, body {
 }
 
 canvas {
-    width: calc(50% - 5px);
+    width: calc(50% - 1rem);
     height: 100%;
 }
 
 #resize {
-    width: 5px;
+    width: 1rem;
     height: 100%;
     cursor: col-resize;
     border: none;
+    background-color: transparent;
 }
 
 @media (max-width: 767px) {
@@ -54,21 +71,14 @@ canvas {
 
     canvas {
         width: 100%;
-        min-height: calc(50% - 5px);
+        min-height: calc(50% - 1rem);
     }
 
     #resize {
-        height: 5px;
+        height: 1rem;
         width: 100%;
         cursor: row-resize;
     }
-}
-
-ol,
-ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
 }
 
 .tab-container {

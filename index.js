@@ -13,16 +13,13 @@ const createPrompt = (prompt, shader) =>
 ${shader}
 
 Generate a new fragment shader or modify the existing one based on the following user description: "${prompt}". Use these specifications:
-- Version: GL ES 3.0.
-- Version directive at the top: "#version 300 es".
 - Precision: "precision mediump float;" after the version directive.
 - Output: Declare the output as an out variable called "fragColor". (gl_FragColor is deprecated)
 - Uniforms: Declare these uniforms at the top of the shader (use them if needed):
     1. float u_time
     2. vec2 u_mouse
     3. vec2 u_resolution
-    4. sampler2D u_texture
-- Input: in vec2 fragCoord
+- Input: varying vec2 fragCoord
 - Main function: Provide a custom main function for the fragment shader based on the user description.
 
 Ensure that any functions used in the shader code are fully defined within the code.
