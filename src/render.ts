@@ -25,12 +25,12 @@ uniform vec2 u_resolution;
 varying vec2 fragCoord;
 
 void main() {
-    float aspectRatio = u_resolution.x / u_resolution.y;
-    vec2 uv = fragCoord * vec2(aspectRatio, 1.0);
-    vec2 center = u_mouse.xy * vec2(0.5 * aspectRatio, 0.5) + vec2(0.5);
+    vec2 aspectRatio = u_resolution / max(u_resolution.x, u_resolution.y);
+    vec2 uv = fragCoord * aspectRatio;
+    vec2 center = u_mouse.xy * aspectRatio;
     
-    float radius = 0.5 * (1.3 + sin(u_time)) * 0.2;
-    float edgeWidth = 0.03;
+    float radius = 0.3 * (1.3 + sin(u_time)) * 0.2;
+    float edgeWidth = 0.005;
     float dist = distance(uv, center);
     float edge = smoothstep(radius - edgeWidth, radius, dist);
 
@@ -115,14 +115,13 @@ export function createIndexBuffer(gl: WebGLRenderingContext) {
 }
 
 export function render(canvas: HTMLCanvasElement, gl: WebGLRenderingContext, t = 0) {
-    const width = canvas.clientWidth
-    const height = canvas.clientHeight
+    const { width, height } = canvas
 
     gl.uniform1f(u_time, t / 1000)
 
-    const normalizedMouseX = (mouseX / width) * 2 - 1
-    const normalizedMouseY = -(mouseY / height) * 2 + 1
-    gl.uniform2f(u_mouse, normalizedMouseX, normalizedMouseY)
+    const normalizedMouseX = mouseX / width;
+    const normalizedMouseY = 1 - (mouseY / height);
+    gl.uniform2f(u_mouse, normalizedMouseX, normalizedMouseY);
 
     const maxDimension = Math.max(width, height)
     const normalizedWidth = width / maxDimension

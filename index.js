@@ -1,9 +1,10 @@
+require('dotenv').config()
 const express = require("express")
 const path = require('path')
 const { Configuration, OpenAIApi } = require("openai")
 
 const app = express()
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 6006
 
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
 const openai = new OpenAIApi(configuration)
@@ -13,9 +14,9 @@ const createPrompt = (prompt, shader) =>
 ${shader}
 
 Generate a new fragment shader or modify the existing one based on the following user description: "${prompt}". Use these specifications:
-- Precision: "precision mediump float;" after the version directive.
-- Output: Declare the output as an out variable called "fragColor". (gl_FragColor is deprecated)
-- Uniforms: Declare these uniforms at the top of the shader (use them if needed):
+- Precision: "precision mediump float;".
+- Output: Use gl_FragColor for the output.
+- Uniforms: Declare these uniforms at the top of the shader ONLY if needed for the given user description:
     1. float u_time
     2. vec2 u_mouse
     3. vec2 u_resolution

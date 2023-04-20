@@ -51,127 +51,218 @@ function recompile() {
 
 const editor = document.getElementById('editor') as HTMLElement
 editor.innerText = defaultFragmentShaderSource
-editor.addEventListener('keyup', debounce(recompile, 1000))
+// editor.addEventListener('keyup', debounce(recompile, 1000))
+editor.addEventListener('keydown', function(e) {
+    if (e.key === "Backspace" ||
+        e.key === "Delete") {
+        setTimeout(function () {
+            const content = editor.textContent ?? ''
+            if (content.trim() === "") {
+                editor.innerText = ""
+                const range = document.createRange()
+                const sel = window.getSelection()
+                range.setStart(editor.childNodes[0], 1)
+                range.collapse(true)
+                sel?.removeAllRanges()
+                sel?.addRange(range)
+            }
+        }, 0)
+    }
 
+    // if (e.key === 'Tab') {
+    //     e.preventDefault()
+
+    //     const selection = window.getSelection() as Selection
+    //     const range = selection.getRangeAt(0)
+
+    //     if (!e.shiftKey) {
+    //         const tabNode = document.createTextNode('\t')
+    //         range.insertNode(tabNode)
+    
+    //         range.setStartAfter(tabNode)
+    //         range.setEndAfter(tabNode)
+    //         selection.removeAllRanges()
+    //         selection.addRange(range)
+
+    //     }
+    // }
+})
+editor.addEventListener('paste', function(e) {
+    if (!e.clipboardData) {
+        return
+    }
+    e.preventDefault()
+    const text = e.clipboardData.getData('text/plain')
+    const selection = window.getSelection() as Selection
+    const range = selection.getRangeAt(0)
+    const textNode = document.createTextNode(text)
+    range.deleteContents()
+    range.insertNode(textNode)
+
+    range.setStartAfter(textNode)
+    range.setEndAfter(textNode)
+    selection.removeAllRanges()
+    selection.addRange(range)
+})
+
+type PromptHistoryItem = { prompt: string, output: string }
+const promptHistory: PromptHistoryItem[] = []
+const history = document.getElementById('history') as HTMLUListElement
+
+function showHistoryPanel() {
+    const historyPanel = document.getElementById('history-panel') as HTMLDivElement
+    historyPanel.style.display = 'block'
+}
+
+function askPrompt() {
+    prompt.disabled = true
+
+    logo.classList.remove('error')
+    logo.classList.add('spin')
+
+    const shader = editor.innerText
+    editor.innerText = ""
+
+    const encodedPrompt = encodeURIComponent(prompt.value)
+    const encodedShader = encodeURIComponent(btoa(shader))
+
+    const stream = new EventSource(`/api/ai?prompt=${encodedPrompt}&shader=${encodedShader}`)
+
+    stream.addEventListener('message', function(e) {
+        if (e.data === '[DONE]') {
+            stream.close()
+
+            compileButton.focus()
+            compileButton.click()
+                
+            logo.classList.remove('spin')
+
+            const i = promptHistory.length
+            function restoreFromHistory() {
+                editor.innerText = promptHistory[i].output
+                recompile()
+            }
+
+            promptHistory.push({ prompt: prompt.value, output: editor.innerText })
+            const historyItem = document.createElement('li')
+            historyItem.innerHTML = `&emsp;* ${prompt.value}`
+            historyItem.tabIndex = 0
+            historyItem.classList.add('history-item')
+            historyItem.addEventListener('click', restoreFromHistory)
+            historyItem.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' ||
+                    e.key === 'Space') {
+                    e.preventDefault()
+                    restoreFromHistory()
+                }
+            })
+            history.prepend(historyItem)
+            showHistoryPanel()
+
+            prompt.disabled = false
+            prompt.value = ''
+            prompt.focus()
+            promptPanel.style.width = "40%"
+            return
+        }
+
+        const message = JSON.parse(e.data)
+        const delta = message.choices[0].delta.content
+
+        if (delta) {
+            editor.innerText += delta
+        }
+    })
+
+    stream.addEventListener('error', function(e) {
+        function error() {
+            prompt.disabled = false
+            prompt.focus()
+                
+            logo.classList.remove('spin')
+            logo.classList.add('error')
+        }
+
+        const event = e.target as EventSource
+        if (event.readyState === EventSource.CLOSED) {
+            console.log('EventSource connection closed')
+            error()
+        } else if (event.readyState === EventSource.CONNECTING) {
+            console.log('EventSource connection failed. Retrying...')
+        } else {
+            console.error('EventSource encountered an unknown error:', e)
+            error()
+        }
+    })
+}
+
+const logo = document.getElementById('openai-logo') as HTMLButtonElement
+logo.addEventListener('click', askPrompt)
+
+const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
 const prompt = document.getElementById('prompt') as HTMLTextAreaElement
+prompt.focus()
+prompt.addEventListener('input', function() {
+    if (prompt.value.length > 32) promptPanel.style.width = "100%"
+    else promptPanel.style.width = "40%"
+})
 prompt.addEventListener('keyup', async function(e) {
     if (e.key !== 'Enter') {
         return
     }
 
-    prompt.disabled = true
-
-    try {
-        const shader = editor.innerText
-        editor.innerText = ''
-
-        const encodedPrompt = encodeURIComponent(prompt.value)
-        const encodedShader = encodeURIComponent(btoa(shader))
-
-        const stream = new EventSource(`/api/ai?prompt=${encodedPrompt}&shader=${encodedShader}`)
-
-        stream.addEventListener('message', function(e) {
-            if (e.data === '[DONE]') {
-                stream.close()
-                recompile()
-                return
-            }
-
-            const message = JSON.parse(e.data)
-            const delta = message.choices[0].delta.content
-
-            if (delta) {
-                editor.innerText += delta
-            }
-        })
-    } catch (e) {
-        console.error("Failed to prompt shader: ", e)
-    } finally {
-        prompt.disabled = false
-    }
+    askPrompt()
 })
 
-let isResizing = false
-const container = document.getElementById('container') as HTMLDivElement
-const resize = document.getElementById('resize') as HTMLButtonElement
+const compileButton = document.getElementById('compile-button') as HTMLButtonElement
+compileButton.addEventListener('click', recompile, false)
 
-const MOBILE_BREAKPOINT = 767
-const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT
+const historyToggle = document.getElementById('history-toggle') as HTMLLabelElement
+const shaderToggle = document.getElementById('shader-toggle') as HTMLLabelElement
 
-function setStyles(element: HTMLElement, styles: { [key: string]: string }) {
-    Object.assign(element.style, styles)
-}
+window.addEventListener('keydown', function(e) {
+    const activeElement = this.document.activeElement?.id
 
-function updateLayout() {  
-    if (isMobile()) {
-        setStyles(container, { width: "100%", height: "50%" })
-        setStyles(canvas, { width: "100%", height: "calc(50% - 1rem)" })
-    } else {
-        setStyles(container, { width: "50%", height: "100%" })
-        setStyles(canvas, { width: "calc(50% - 1rem)", height: "100%" })
-    }
-}
-updateLayout()
-window.addEventListener("resize", updateLayout)
-
-resize.addEventListener('mousedown', function(e) {
-    e.preventDefault()
-    isResizing = true
-})
-
-const RESIZE_DELTA = 10
-
-window.addEventListener('mousemove', function(e) {
-    if (!isResizing) {
-        return
-    }
-
-    const event = e as MouseEvent
-
-    if (isMobile()) {
-        let containerHeight = event.clientY
-        let canvasHeight = window.innerHeight - event.clientY - RESIZE_DELTA
-    
-        setStyles(container, { height: `${containerHeight}px` })
-        setStyles(canvas, { height: `${canvasHeight}px` })
-    } else {
-        let containerWidth = event.clientX
-        let canvasWidth = window.innerWidth - event.clientX - RESIZE_DELTA
-    
-        setStyles(container, { width: `${containerWidth}px` })
-        setStyles(canvas, { width: `${canvasWidth}px` })
-    }
-})
-
-window.addEventListener('mouseup', function() {
-    isResizing = false
-})
-
-resize.addEventListener('keydown', function(e) {
-    const updateSize = (dim: 'width' | 'height', delta: number) => {
-        const containerSize = parseInt(container.style[dim])
-        const canvasSize = parseInt(canvas.style[dim])
-
-        const newContainerSize = containerSize + delta
-        const newCanvasSize = canvasSize - delta
-
-        if (newContainerSize > 0 && newCanvasSize > 0) {
-            setStyles(container, { [dim]: `${newContainerSize}px` })
-            setStyles(canvas, { [dim]: `${newCanvasSize}px` })
+    if (activeElement) {
+        if (activeElement === 'editor' ||
+            activeElement === 'prompt') {
+            return
         }
     }
 
-    if (isMobile()) {
-        if (e.key === "ArrowUp") {
-            updateSize('height', -10)
-        } else if (e.key === "ArrowDown") {
-            updateSize('height', 10)
-        }
-    } else {
-        if (e.key === "ArrowLeft") {
-            updateSize('width', -10)
-        } else if (e.key === "ArrowRight") {
-            updateSize('width', 10)
-        }
+    switch (e.key) {
+        case 'c':
+            e.preventDefault()
+            compileButton.focus()
+            compileButton.click()
+            break
+
+        case 'q':
+        case 'a':
+            e.preventDefault()
+            prompt.focus()
+            break
+
+        case 'h':
+            e.preventDefault()
+            historyToggle.focus()
+            historyToggle.click()
+            break
+
+        case 's':
+            e.preventDefault()
+            shaderToggle.focus()
+            shaderToggle.click()
+            break
     }
 })
+
+// const colorPicker = document.getElementById('color-picker') as HTMLInputElement
+// colorPicker.addEventListener('input', function(e) {
+//     const event = e.target as HTMLInputElement
+//     document.documentElement.style.setProperty('--color', event.value)
+// })
+
+// const randomStartColor = `hsl(${Math.floor(Math.random() * 360)}, 71%, 57%)`
+// colorPicker.value = randomStartColor
+// document.documentElement.style.setProperty('--color', randomStartColor)

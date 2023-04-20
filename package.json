@@ -1,7 +1,7 @@
 {
     "name": "chatgl",
-    "version": "0.0.1",
-    "author": "Benji Trosch",
+    "version": "1.0.0",
+    "author": "Benji",
     "scripts": {
         "start": "node index",
         "dev": "vite",
@@ -9,11 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@codemirror/lang-cpp": "^6.0.2",
-        "@codemirror/state": "^6.2.0",
-        "@codemirror/theme-one-dark": "^6.1.2",
-        "@codemirror/view": "^6.9.5",
-        "codemirror": "^6.0.1",
+        "dotenv": "^16.0.3",
         "express": "^4.18.2",
         "openai": "^3.2.1"
     },
