@@ -1,6 +1,8 @@
 require('dotenv').config()
 const express = require("express")
 const path = require('path')
+const limit = require("express-rate-limit")
+const { v4: uuidv4 } = require("uuid")
 const { Configuration, OpenAIApi } = require("openai")
 
 const app = express()
@@ -32,10 +34,57 @@ const minifyShaderCode = (shaderCode) =>
         .replace(/\s+/g, ' ')
         .replace(/\s*([\(\),\{\}])\s*/g, '$1')
 
+const MAX_REQUESTS_PER_MINUTE = 10
+const MAX_REQUESTS_PER_PERIOD = 100
+const REQUESTS_PER_MINUTE_MS = 1 * 60 * 1000
+const REQUESTS_PER_DAY_MS = 24 * 60 * 60 * 1000
+
+const apiLimiter = limit({
+    windowMs: REQUESTS_PER_MINUTE_MS,
+    max: MAX_REQUESTS_PER_MINUTE,
+    message: "Too many requests (max 10 per minute). Please try again later.",
+})
+
+const ipQuotas = new Map()
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, quota] of ipQuotas.entries()) {
+        if (quota.resetTime <= now) {
+            ipQuotas.delete(ip);
+        }
+    }
+}, REQUESTS_PER_DAY_MS)
+
 app.use(express.static(path.join(__dirname, 'dist')))
 
 app.get('/', (_, res) => {
     res.status(200).sendFile(path.join(__dirname, 'dist/index.html'))
+})
+
+app.use("/api/ai", apiLimiter)
+
+app.use("/api/ai", (req, res, next) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    const now = Date.now()
+    let quota = ipQuotas.get(ip)
+
+    if (!quota) {
+        quota = { id: uuidv4(), count: 0, resetTime: now + REQUESTS_PER_DAY_MS }
+        ipQuotas.set(ip, quota)
+    }
+
+    if (quota.resetTime <= now) {
+        quota.count = 0
+        quota.resetTime = now + REQUESTS_PER_DAY_MS
+    }
+
+    if (quota.count >= MAX_REQUESTS_PER_PERIOD) {
+        res.status(429).send("Quota exceeded (max 100 per day). Please try again later.")
+    } else {
+        quota.count += 1
+        next()
+    }
 })
 
 app.get("/api/ai", async (req, res) => {
