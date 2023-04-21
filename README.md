@@ -15,6 +15,8 @@ GLSL fragment shader generator using `gpt-3.5-turbo` wrapped in a fast Vanilla T
 
 1. Visit https://chatgl.ai
 
+![Apr-21-2023 19-54-07 (1)](https://user-images.githubusercontent.com/64439681/233750420-b63738db-67a3-47c3-b727-b9a923841a26.gif)
+
 ## Acknowledgements
 
 * [Harley Turan](https://twitter.com/hturan/status/1638230938080485376) using GPT-4 for MIDI-controllable shaders
