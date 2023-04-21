@@ -1,3 +1,4 @@
+import { collapsePanel, expandPanel, showPanel } from './animation'
 import {
     createProgram,
     createShader,
@@ -7,8 +8,6 @@ import {
     findGlobalUniforms,
     initRenderer,
 } from './render'
-
-import './styles.css'
 
 function assert(condition: boolean, message: string) {
     if (!condition) throw new Error(message)
@@ -109,11 +108,6 @@ type PromptHistoryItem = { prompt: string, output: string }
 const promptHistory: PromptHistoryItem[] = []
 const history = document.getElementById('history') as HTMLUListElement
 
-function showHistoryPanel() {
-    const historyPanel = document.getElementById('history-panel') as HTMLDivElement
-    historyPanel.style.display = 'block'
-}
-
 function askPrompt() {
     prompt.disabled = true
 
@@ -157,7 +151,7 @@ function askPrompt() {
                 }
             })
             history.prepend(historyItem)
-            showHistoryPanel()
+            showPanel(historyPanel, 0)
 
             prompt.disabled = false
             prompt.value = ''
@@ -200,6 +194,11 @@ const logo = document.getElementById('openai-logo') as HTMLButtonElement
 logo.addEventListener('click', askPrompt)
 
 const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
+const historyPanel = document.getElementById('history-panel') as HTMLDivElement
+const editorPanel = document.getElementById('editor-panel') as HTMLDivElement
+showPanel(promptPanel, 0)
+showPanel(editorPanel, 150)
+
 const prompt = document.getElementById('prompt') as HTMLTextAreaElement
 prompt.focus()
 prompt.addEventListener('input', function() {
@@ -232,24 +231,29 @@ window.addEventListener('keydown', function(e) {
 
     switch (e.key) {
         case 'c':
+        case 'C':
             e.preventDefault()
             compileButton.focus()
             compileButton.click()
             break
 
         case 'q':
+        case 'Q':
         case 'a':
+        case 'A':
             e.preventDefault()
             prompt.focus()
             break
 
         case 'h':
+        case 'H':
             e.preventDefault()
             historyToggle.focus()
             historyToggle.click()
             break
 
         case 's':
+        case 'S':
             e.preventDefault()
             shaderToggle.focus()
             shaderToggle.click()
@@ -266,3 +270,17 @@ window.addEventListener('keydown', function(e) {
 // const randomStartColor = `hsl(${Math.floor(Math.random() * 360)}, 71%, 57%)`
 // colorPicker.value = randomStartColor
 // document.documentElement.style.setProperty('--color', randomStartColor)
+
+document.querySelectorAll('.panel-legend-expand-button').forEach((label) => {
+    label.addEventListener('click', (e) => {
+        const event = e.target as HTMLDivElement
+        const targetElement = event.parentElement?.nextElementSibling as HTMLDivElement
+        const isVisible = !targetElement.classList.contains('collapsed')
+    
+        if (isVisible) {
+            collapsePanel(targetElement)
+        } else {
+            expandPanel(targetElement)
+        }
+    })
+})

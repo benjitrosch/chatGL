@@ -106,10 +106,6 @@ input[type=text].prompt:disabled {
     overflow: auto;
 }
 
-.history-panel {
-    display: none;
-}
-
 .history-item {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -225,6 +221,10 @@ canvas {
     transition: width 0.3s;
 }
 
+.panel-hidden {
+    display: none !important;
+}
+
 .panel-legend {
     font-weight: bold;
     padding: 0 var(--space-1);
@@ -251,8 +251,12 @@ canvas {
     text-shadow: none;
 }
 
-.panel-content {
-    transition: opacity 0.3s, max-height 0.3s;
+.collapsed {
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
 }
 
 .toggle-panel {

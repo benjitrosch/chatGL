@@ -9,13 +9,14 @@
         <meta name="keywords" content="ChatGL, fragment shader, GLSL, generator, gpt-3.5-turbo, AI, graphics, visuals">
         <meta name="author" content="Benji Trosch">
         <link rel="canonical" href="https://chatgl.ai/">
+        <link rel="stylesheet" href="src/styles.css" preload>
     </head>
     <body>
         <header>
             <h1 class="hidden">ChatGL - GLSL shader generator using GPT-3</h1>
         </header>
         <div id="container" class="container">
-            <div class="panel panel-forty" id="prompt-panel" style="display: flex; align-items: center; gap: 1rem; font-size: 24px;">
+            <div class="panel panel-forty panel-hidden" id="prompt-panel" style="display: flex; align-items: center; gap: 1rem; font-size: 24px;">
                 <legend class="panel-legend">
                     <button id="openai-logo" class="openai-logo" aria-label="Submit prompt">
                         <svg viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg">
@@ -30,24 +31,24 @@
                     <input type="text" id="prompt" class="prompt" maxLength="96" aria-label="Enter prompt">
                 </div>
             </div>
-            <div class="panel panel-forty history-panel" id="history-panel">
+            <div class="panel panel-forty panel-hidden" id="history-panel">
                 <input type="checkbox" id="toggle-panel-h" class="toggle-panel" checked="false">
                 <legend class="panel-legend">
-                    <label id="history-toggle" for="toggle-panel-h" class="panel-legend-expand-button" tabindex="0">[h]</label>
+                    <label id="history-toggle" for="toggle-panel-h" class="panel-legend-expand-button" tabindex="0" aria-label="Toggle show prompt history">[h]</label>
                     history
                 </legend>
-                <div class="panel-content">
+                <div class="panel-content" style="opacity: 1; max-height: 100vh;">
                     <ul id="history" class="history">
                     </ul>
                 </div>
             </div>
-            <div class="panel panel-forty">
+            <div class="panel panel-forty panel-hidden" id="editor-panel">
                 <input type="checkbox" id="toggle-panel-s" class="toggle-panel">
                 <legend class="panel-legend">
-                    <label id="shader-toggle" for="toggle-panel-s" class="panel-legend-expand-button" tabindex="0">[s]</label>
+                    <label id="shader-toggle" for="toggle-panel-s" class="panel-legend-expand-button" tabindex="0" aria-label="Toggle show shader code">[s]</label>
                     shader
                 </legend>
-                <div class="panel-content">
+                <div class="panel-content" style="opacity: 1; max-height: 100vh;">
                     <label for="editor" class="hidden">Code editor</label>
                     <pre><code
                         id="editor"
@@ -58,7 +59,7 @@
                     ></code></pre>
                     <ul>
                         <li>
-                            <button class="button" id="compile-button">
+                            <button class="button" id="compile-button" aria-label="Compile shader">
                                 <code>[C]</code> compile
                             </button>
                         </li>
