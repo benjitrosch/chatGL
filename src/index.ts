@@ -1,4 +1,9 @@
-import { collapsePanel, expandPanel, showPanel } from './animation'
+import {
+    collapsePanel,
+    expandPanel,
+    hidePanel,
+    showPanel
+} from './animation'
 import {
     createProgram,
     createShader,
@@ -48,6 +53,28 @@ function recompile() {
     findGlobalUniforms(gl, program)
 }
 
+let acknowledged = false
+function acknowledge() {
+    acknowledged = true
+    
+    hidePanel(modalPanel, 0)
+    const modal = document.getElementById('modal') as HTMLDialogElement
+    setTimeout(() => {
+        prompt.focus()
+        modal.classList.remove('modal')
+    }, 400)
+
+    showPanel(promptPanel, 500)
+    showPanel(editorPanel, 700)
+}
+
+const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
+const historyPanel = document.getElementById('history-panel') as HTMLDivElement
+const editorPanel = document.getElementById('editor-panel') as HTMLDivElement
+const modalPanel = document.getElementById('modal-panel') as HTMLDivElement
+const modalButton = document.getElementById('modal-button') as HTMLButtonElement
+modalButton.addEventListener('click', acknowledge)
+
 const editor = document.getElementById('editor') as HTMLElement
 editor.innerText = defaultFragmentShaderSource
 // editor.addEventListener('keyup', debounce(recompile, 1000))
@@ -82,7 +109,6 @@ editor.addEventListener('keydown', function(e) {
     //         range.setEndAfter(tabNode)
     //         selection.removeAllRanges()
     //         selection.addRange(range)
-
     //     }
     // }
 })
@@ -156,7 +182,7 @@ function askPrompt() {
             prompt.disabled = false
             prompt.value = ''
             prompt.focus()
-            promptPanel.style.width = "40%"
+            promptPanel.classList.remove('panel-expanded')
             return
         }
 
@@ -193,20 +219,14 @@ function askPrompt() {
 const logo = document.getElementById('openai-logo') as HTMLButtonElement
 logo.addEventListener('click', askPrompt)
 
-const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
-const historyPanel = document.getElementById('history-panel') as HTMLDivElement
-const editorPanel = document.getElementById('editor-panel') as HTMLDivElement
-showPanel(promptPanel, 0)
-showPanel(editorPanel, 150)
-
 const prompt = document.getElementById('prompt') as HTMLTextAreaElement
-prompt.focus()
 prompt.addEventListener('input', function() {
-    if (prompt.value.length > 32) promptPanel.style.width = "100%"
-    else promptPanel.style.width = "40%"
+    if (prompt.value.length > 32) promptPanel.classList.add('panel-expanded')
+    else promptPanel.classList.remove('panel-expanded')
 })
 prompt.addEventListener('keyup', async function(e) {
-    if (e.key !== 'Enter') {
+    if (e.key !== 'Enter' ||
+        prompt.value.trim().length < 1) {
         return
     }
 
@@ -229,6 +249,15 @@ window.addEventListener('keydown', function(e) {
         }
     }
 
+    if (!acknowledged) {
+        if (e.key === 'a' || e.key === 'A') {
+            e.preventDefault()
+            modalButton.focus()
+            modalButton.click()
+        }
+        return
+    }
+
     switch (e.key) {
         case 'c':
         case 'C':
@@ -237,10 +266,10 @@ window.addEventListener('keydown', function(e) {
             compileButton.click()
             break
 
-        case 'q':
-        case 'Q':
         case 'a':
         case 'A':
+        case 'q':
+        case 'Q':
             e.preventDefault()
             prompt.focus()
             break

@@ -34,3 +34,16 @@ export function showPanel(panel: HTMLDivElement, delay: number) {
       easing: 'easeOutElastic(1, 0.5)',
     })
 }
+
+export function hidePanel<T extends HTMLElement>(panel: T, delay: number) {
+    setTimeout(() => panel.classList.add('panel-hidden'), 400)
+
+    anime({
+      targets: panel,
+      translateY: [0, -50],
+      opacity: [1, 0],
+      duration: 400,
+      delay: delay,
+      easing: 'easeInElastic(0.5, 1)',
+    })
+}
