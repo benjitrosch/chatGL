@@ -53,38 +53,46 @@ function recompile() {
     findGlobalUniforms(gl, program)
 }
 
-let acknowledged = false
-function acknowledge() {
+const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
+const historyPanel = document.getElementById('history-panel') as HTMLDivElement
+const editorPanel = document.getElementById('editor-panel') as HTMLDivElement
+const modalPanel = document.getElementById('modal-panel') as HTMLDivElement
+const modalButton = document.getElementById('modal-button') as HTMLButtonElement
+
+let acknowledged = !!localStorage.getItem('acknowledged')
+function acknowledge(skip: boolean) {
+    const basedelay = skip ? 0 : 400
+
     acknowledged = true
+    localStorage.setItem('acknowledged', 'ok')
     
     hidePanel(modalPanel, 0)
     const modal = document.getElementById('modal') as HTMLDialogElement
     setTimeout(() => {
         prompt.focus()
         modal.classList.remove('modal')
-    }, 400)
+    }, basedelay)
 
-    showPanel(promptPanel, 500)
-    showPanel(editorPanel, 700)
+    showPanel(promptPanel, basedelay + 100)
+    showPanel(editorPanel, basedelay + 300)
 }
 
-const promptPanel = document.getElementById('prompt-panel') as HTMLDivElement
-const historyPanel = document.getElementById('history-panel') as HTMLDivElement
-const editorPanel = document.getElementById('editor-panel') as HTMLDivElement
-const modalPanel = document.getElementById('modal-panel') as HTMLDivElement
-const modalButton = document.getElementById('modal-button') as HTMLButtonElement
-modalButton.addEventListener('click', acknowledge)
+if (acknowledged) {
+    acknowledge(true)
+} else {
+    modalButton.addEventListener('click', () => acknowledge(false))
+}
 
 const editor = document.getElementById('editor') as HTMLElement
 editor.innerText = defaultFragmentShaderSource
 // editor.addEventListener('keyup', debounce(recompile, 1000))
 editor.addEventListener('keydown', function(e) {
-    if (e.key === "Backspace" ||
-        e.key === "Delete") {
+    if (e.key === 'Backspace' ||
+        e.key === 'Delete') {
         setTimeout(function () {
             const content = editor.textContent ?? ''
-            if (content.trim() === "") {
-                editor.innerText = ""
+            if (content.trim() === '') {
+                editor.innerText = ''
                 const range = document.createRange()
                 const sel = window.getSelection()
                 range.setStart(editor.childNodes[0], 1)
@@ -141,7 +149,7 @@ function askPrompt() {
     logo.classList.add('spin')
 
     const shader = editor.innerText
-    editor.innerText = ""
+    editor.innerText = ''
 
     const encodedPrompt = encodeURIComponent(prompt.value)
     const encodedShader = encodeURIComponent(btoa(shader))
@@ -266,6 +274,13 @@ window.addEventListener('keydown', function(e) {
             compileButton.click()
             break
 
+        case 'v':
+        case 'V':
+            e.preventDefault()
+            shareButton.focus()
+            shareButton.click()
+            break
+
         case 'a':
         case 'A':
         case 'q':
@@ -312,4 +327,29 @@ document.querySelectorAll('.panel-legend-expand-button').forEach((label) => {
             expandPanel(targetElement)
         }
     })
+})
+
+const urlSearchParams = new URLSearchParams(window.location.search)
+const shareParam = urlSearchParams.get('share')
+
+if (shareParam) {
+    const shader = atob(decodeURIComponent(shareParam))
+    editor.innerText = shader
+    recompile()
+    acknowledge(true)
+}
+
+const shareButton = document.getElementById('share-button') as HTMLButtonElement
+shareButton.addEventListener('click', async function() {
+    const shader = editor.innerText
+    const encodedShader = encodeURIComponent(btoa(shader))
+
+    const url = new URL(window.location.href)
+    url.searchParams.set('share', encodedShader)
+
+    try {
+        await navigator.clipboard.writeText(url.toString())
+    } catch(e) {
+        console.error('Failed to copy text to clipboard:', e)
+    }
 })
