@@ -11,22 +11,25 @@ const PORT = process.env.PORT || 6006
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
 const openai = new OpenAIApi(configuration)
 
+const systemMessages = [
+    "Generate a new fragment shader or modify the existing one based on the user description.",
+    "Output in GLSL only.",
+    `Precision: "precision mediump float;"`,
+    `Declare these uniforms at the top of the shader ONLY if needed for the given user description:
+        1. float u_time
+        2. vec2 u_mouse
+        3. vec2 u_resolution`,
+    "Input: varying vec2 fragCoord",
+    "Main function: Provide a custom main function for the fragment shader based on the user description.",
+    "Ensure that any functions used in the shader code are fully defined within the code.",
+    "Do not add any explanation or text before or after the shader code. Do not include backticks (\`\`\`) in the response.",
+]
+
 const createPrompt = (prompt, shader) =>
 `Given the current GLSL fragment shader code:
 ${shader}
 
-Generate a new fragment shader or modify the existing one based on the following user description: "${prompt}". Use these specifications:
-- Precision: "precision mediump float;".
-- Output: Use gl_FragColor for the output.
-- Uniforms: Declare these uniforms at the top of the shader ONLY if needed for the given user description:
-    1. float u_time
-    2. vec2 u_mouse
-    3. vec2 u_resolution
-- Input: varying vec2 fragCoord
-- Main function: Provide a custom main function for the fragment shader based on the user description.
-
-Ensure that any functions used in the shader code are fully defined within the code.
-Do not add any explanation or text before or after the shader code. Do not include backticks (\`\`\`) in the response.`
+Generate a new fragment shader or modify the existing one based on this prompt: "${prompt}".`
 
 const minifyShaderCode = (shaderCode) => 
     shaderCode.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -101,12 +104,12 @@ app.get("/api/ai", async (req, res) => {
   
     const completion = await openai.createChatCompletion(
         {
-            model: "gpt-3.5-turbo",
+            model: "gpt-4",
             messages: [
-                {
+                ...systemMessages.map((content) => ({
                     role: "system",
-                    content: "Output in GLSL only"
-                },
+                    content
+                })),
                 {
                     role: "user",
                     content: createPrompt(prompt, minifyShaderCode(decodedShader)),
