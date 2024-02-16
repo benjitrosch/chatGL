@@ -4,16 +4,16 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ChatGL - GLSL shader generator using GPT-3</title>
-        <meta name="description" content="Generate fragment shaders with AI using gpt-3. Create visuals and generative art using AI-driven prompts and suggestions.">
-        <meta name="keywords" content="ChatGL, fragment shader, GLSL, generator, gpt-3.5-turbo, AI, graphics, visuals">
+        <title>ChatGL - GLSL shader generator using GPT-4</title>
+        <meta name="description" content="Generate fragment shaders with AI using gpt-4. Create visuals and generative art using AI-driven prompts and suggestions.">
+        <meta name="keywords" content="ChatGL, fragment shader, GLSL, webGL, generator, gpt-4, gpt-3.5-turbo, AI, graphics, visuals">
         <meta name="author" content="Benji Trosch">
         <link rel="canonical" href="https://chatgl.ai/">
         <link rel="stylesheet" href="src/styles.css" preload>
     </head>
     <body>
         <header>
-            <h1 class="hidden">ChatGL - GLSL shader generator using GPT-3</h1>
+            <h1 class="hidden">ChatGL - GLSL shader generator using GPT-4</h1>
         </header>
         <dialog id="modal" class="modal" aria-labelledby="modal-title" aria-describedby="modal-description">
             <div class="panel panel-forty" id="modal-panel" style="max-width: 660px;">
@@ -50,6 +50,103 @@
                     >
                 </div>
             </div>
+            <fieldset class="panel panel-forty" id="config-panel">
+                <input type="checkbox" id="toggle-panel-c" class="toggle-panel">
+                <legend class="panel-legend">
+                    <label
+                        id="config-toggle"
+                        for="toggle-panel-c"
+                        class="panel-legend-expand-button"
+                        tabindex="0"
+                        aria-label="Toggle show config"
+                    >
+                        [C] Config 
+                    </label>
+                </legend>
+                <div class="panel-content" style="opacity: 1; max-height: 100vh;">
+                    <ul id="config-options" class="config-options">
+                        <li>
+                            <label for="api-key">&emsp;* OPENAI API KEY</label>
+                            <input
+                                type="text"
+                                id="api-key"
+                                class="api-key"
+                                autocomplete="off"
+                                spellcheck="false"
+                                aria-label="Enter OpenAI API key"
+                            >
+                        </li>
+                        <li>
+                            <label>&emsp;* WINDOWS LAYOUT</label>
+                            <label
+                                for="window-layout-left"
+                                class="window-layout-option"
+                                tabindex="0"
+                            >
+                                <input
+                                    type="radio"
+                                    id="window-layout-left"
+                                    class="window-layout-left"
+                                    name="window-layout"
+                                    value="left"
+                                    aria-label="Anchor windows to the left"
+                                    checked 
+                                >
+                                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 4H22V20H2V4ZM8 6H20V18H8V6Z" />
+                                </svg>
+                            </label>
+                            <label
+                                for="window-layout-bottom"
+                                class="window-layout-option"
+                                tabindex="0"
+                            >
+                                <input
+                                    type="radio"
+                                    id="window-layout-bottom"
+                                    class="window-layout-bottom"
+                                    name="window-layout"
+                                    value="bottom"
+                                    aria-label="Anchor windows to the bottom"
+                                >
+                                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 20V4H22V20H2ZM4 6H20V14H4V6Z" />
+                                </svg>
+                            </label>
+                            <label
+                                for="window-layout-right" 
+                                class="window-layout-option"
+                                tabindex="0"
+                            >
+                                <input
+                                    type="radio"
+                                    id="window-layout-right"
+                                    class="window-layout-right"
+                                    name="window-layout"
+                                    value="right"
+                                    aria-label="Anchor windows to the right"
+                                >
+                                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 4H22V20H2V4ZM16 18V6H4V18H16Z" />
+                                </svg>
+                            </label>
+                        </li>
+                        <li>
+                            <label for="color-picker">&emsp;* OUTLINES COLOR</label>
+                            <label for="color-picker" tabindex="0">
+                                <input
+                                    type="color" 
+                                    id="color-picker" 
+                                    class="color-picker" 
+                                    value="#E8AE3B"
+                                    aria-label="Set user interface outline and text color"
+                                >
+                                <strong><u><span id="color-hex" class="color-hex"></span></u></strong>
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+            </fieldset>
             <fieldset class="panel panel-forty panel-hidden" id="history-panel">
                 <input type="checkbox" id="toggle-panel-h" class="toggle-panel">
                 <legend class="panel-legend">
@@ -89,17 +186,31 @@
                         contenteditable="true"
                         spellcheck="false"
                     ></code></pre>
-                    <button class="button" id="compile-button" aria-label="Compile shader">
-                        <code>[C]</code> compile
+                    <button class="button" id="build-button" aria-label="Build shader">
+                        <code>[B]</code> build
                     </button>
                     <button class="button" id="share-button" aria-label="Get shareable URL">
                         <code>[V]</code> share
                     </button>
                 </div>
             </fieldset>
-            <!-- <div class="panel panel-forty">
-                <input type="color" id="color-picker" value="#E8AE3B">
-            </div> -->
+            <fieldset class="panel panel-forty panel-hidden" id="errors-panel">
+                <input type="checkbox" id="toggle-panel-e" class="toggle-panel">
+                <legend class="panel-legend">
+                    <label
+                        id="errors-toggle"
+                        for="toggle-panel-e"
+                        class="panel-legend-expand-button"
+                        tabindex="0"
+                        aria-label="Toggle show error messages"
+                    >
+                        [E] Errors 
+                    </label>
+                </legend>
+                <div class="panel-content" style="opacity: 1; max-height: 100vh;">
+                    <ul id="error-messages" class="error-messages"></ul>
+                </div>
+            </fieldset>
         </div>
         <canvas id="canvas" tabindex="-1" aria-hidden="true"></canvas>
         <p class="version">

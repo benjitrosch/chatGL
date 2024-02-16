@@ -19,29 +19,38 @@ export const defaultFragmentShaderSource =
 `precision mediump float;
 
 uniform float u_time;
-uniform vec2 u_mouse;
 uniform vec2 u_resolution; 
 
 varying vec2 fragCoord;
 
+float map(vec3 p) {
+    vec3 q = mod(p + 1.5,3.0) - 1.5;
+    return length(q) - 1.0;
+}
+
+vec4 raymarch(vec3 ro, vec3 rd) {
+    float t = 0.0; 
+    for(int i=0; i<64; i++) {
+        vec3 p = ro + t * rd; 
+        float d = map(p); 
+        if(d<0.01) {
+            return vec4(0.5 + p, 1.0); 
+        }
+        t += d; 
+        if(t>20.0) break; 
+    }
+    return vec4(0.0);
+}
+
 void main() {
-    vec2 aspectRatio = u_resolution / max(u_resolution.x, u_resolution.y);
-    vec2 uv = fragCoord * aspectRatio;
-    vec2 center = u_mouse.xy * aspectRatio;
-    
-    float radius = 0.3 * (1.3 + sin(u_time)) * 0.2;
-    float edgeWidth = 0.005;
-    float dist = distance(uv, center);
-    float edge = smoothstep(radius - edgeWidth, radius, dist);
+    vec2 uv = (fragCoord / u_resolution.x)*2.0-1.0; 
+    uv.x *= u_resolution.x / u_resolution.y; 
 
-    float sinTime = 0.5 * (1.0 + sin(u_time));
-    float cosTime = 0.5 * (1.0 + cos(u_time));
+    vec3 ro = vec3(sin(u_time/4.0)*5.0, cos(u_time/4.0)*5.0, u_time);   
+    vec3 rd = normalize(vec3(uv, -1.0)); 
 
-    vec3 circleColor = mix(vec3(sinTime, 0.3, cosTime), vec3(1.0), edge);
-    vec3 backgroundColor = vec3(uv.x, uv.y, sinTime);
-    vec3 color = mix(backgroundColor, circleColor, step(dist, radius));
-
-    gl_FragColor = vec4(color, 1.0);
+    vec4 col = raymarch(ro, rd);
+    gl_FragColor = vec4(col);
 }`
 
 export function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {

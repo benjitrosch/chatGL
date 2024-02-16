@@ -3,13 +3,12 @@ const express = require("express")
 const path = require('path')
 const limit = require("express-rate-limit")
 const { v4: uuidv4 } = require("uuid")
-const { Configuration, OpenAIApi } = require("openai")
+const { OpenAI } = require("openai")
 
 const app = express()
 const PORT = process.env.PORT || 6006
 
-const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
-const openai = new OpenAIApi(configuration)
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const systemMessages = [
     "Generate a new fragment shader or modify the existing one based on the user description.",
@@ -25,20 +24,17 @@ const systemMessages = [
     "Do not add any explanation or text before or after the shader code. Do not include backticks (\`\`\`) in the response.",
 ]
 
-const createPrompt = (prompt, shader) =>
-`Given the current GLSL fragment shader code:
-${shader}
+const getShaderContext = (shader) => `Given the current GLSL fragment shader code: ${shader}`
+const createPrompt = (prompt) => `Generate a new fragment shader based on this prompt: "${prompt}".`
 
-Generate a new fragment shader or modify the existing one based on this prompt: "${prompt}".`
-
-const minifyShaderCode = (shaderCode) => 
+const minifyShaderCode = (shaderCode) =>
     shaderCode.replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/\/\/.*/g, '')
         .replace(/\s+/g, ' ')
         .replace(/\s*([\(\),\{\}])\s*/g, '$1')
 
 const MAX_REQUESTS_PER_MINUTE = 10
-const MAX_REQUESTS_PER_PERIOD = 100
+const MAX_REQUESTS_PER_PERIOD = 512
 const REQUESTS_PER_MINUTE_MS = 1 * 60 * 1000
 const REQUESTS_PER_DAY_MS = 24 * 60 * 60 * 1000
 
@@ -51,10 +47,10 @@ const apiLimiter = limit({
 const ipQuotas = new Map()
 
 setInterval(() => {
-    const now = Date.now();
+    const now = Date.now()
     for (const [ip, quota] of ipQuotas.entries()) {
         if (quota.resetTime <= now) {
-            ipQuotas.delete(ip);
+            ipQuotas.delete(ip)
         }
     }
 }, REQUESTS_PER_DAY_MS)
@@ -83,7 +79,17 @@ app.use("/api/ai", (req, res, next) => {
     }
 
     if (quota.count >= MAX_REQUESTS_PER_PERIOD) {
-        res.status(429).send("Quota exceeded (max 100 per day). Please try again later.")
+        const message = "Raie limit exceeded. Please try again later."
+
+        res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        })
+
+        res.write(`event: error\n`)
+        res.write(`data: ${JSON.stringify({ status: 429, message })}\n\n`)
+        res.end()
     } else {
         quota.count += 1
         next()
@@ -91,19 +97,21 @@ app.use("/api/ai", (req, res, next) => {
 })
 
 app.get("/api/ai", async (req, res) => {
-    res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-    })
-
+    const apiKey = req.query['apiKey']
     const prompt = req.query['prompt']
     const shader = req.query['shader']
 
     const decodedShader = Buffer.from(decodeURIComponent(shader), 'base64').toString('utf-8')
-  
-    const completion = await openai.createChatCompletion(
-        {
+
+    res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+    })
+
+    try {
+        const { chat } = !!apiKey ? new OpenAI({ apiKey }) : openai
+        const completion = await chat.completions.create({
             model: "gpt-4",
             messages: [
                 ...systemMessages.map((content) => ({
@@ -112,17 +120,31 @@ app.get("/api/ai", async (req, res) => {
                 })),
                 {
                     role: "user",
-                    content: createPrompt(prompt, minifyShaderCode(decodedShader)),
+                    content: getShaderContext(minifyShaderCode(decodedShader)) + '\n' + createPrompt(prompt),
                 }
             ],
             stream: true,
-        },
-        {
-            responseType: "stream"
+        })
+
+        req.on('close', () => {
+            res.end()
+        })
+
+        for await (const data of completion) {
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
         }
-    )
-  
-    completion.data.pipe(res)
+
+        res.write('event: stream-complete\ndata: {}\n\n');
+        res.end();
+    } catch (error) {
+        const message = error.status === 429
+            ? "Out of funds for OpenAI requests on current API key. Please use a different key or try again later."
+            : error.message
+
+        res.write(`event: error\n`)
+        res.write(`data: ${JSON.stringify({ status: error.status, message })}\n\n`)
+        res.end()
+    }
 })
 
 app.use('*', (_, res) => res.sendStatus(404))
@@ -132,3 +154,4 @@ app.listen(PORT, () => {
 })
 
 module.exports = app
+

@@ -74,6 +74,7 @@ pre {
 .container {
     display: flex;
     flex-direction: column;
+    align-items: start;
     gap: 0.5rem;
     padding: 0.5rem;
     z-index: 1;
@@ -100,6 +101,71 @@ input[type=text].prompt:disabled {
     color: var(--openai);
 }
 
+input[type=text].api-key {
+    font-family: var(--font-family);
+    width: 60%; 
+    color: var(--color);
+    background: none;
+    border-width: var(--panel-border);
+    border-color: var(--color);
+    border-style: solid;
+    outline: none;
+    opacity: 0.65;
+}
+
+input[type=text].api-key:focus {
+    color: white;
+    border-color: white;
+    opacity: 1;
+}
+
+input[type="color"] {
+    display: none;
+}
+
+.color-hex {
+    color: white;
+    cursor: pointer;
+}
+
+.color-hex:hover {
+    color: black;
+    background: var(--color);
+}
+
+.config-options > li {
+    margin-bottom: var(--space-1);
+}
+
+.window-layout-option input[type="radio"] {
+    display: none;
+}
+
+.window-layout-option input[type="radio"] + svg {
+    fill: var(--color);
+    width: 27px;
+    margin-bottom: -5px;
+    cursor: pointer;
+    opacity: 0.65;
+}
+
+.window-layout-option input[type="radio"] + svg:hover {
+    fill: black;
+    background: var(--color);
+    opacity: 1;
+}
+
+.window-layout-option input[type="radio"]:checked + svg {
+    fill: white;
+    opacity: 1;
+}
+
+.window-layout-option input[type="radio"]:checked + svg:hover {
+    fill: white;
+    background: transparent;
+    opacity: 1;
+}
+
 .history {
     max-height: calc(var(--font-size) * 5);
     overflow: auto;
@@ -122,6 +188,15 @@ input[type=text].prompt:disabled {
     text-shadow: none;
 }
 
+.error-messages {
+    max-height: calc(var(--font-size) * 5);
+    overflow: auto;
+}
+
+.errors-item{
+    color: red; 
+}
+
 .empty {
     display: none;
     opacity: 0;
@@ -138,7 +213,7 @@ pre {
     white-space: -o-pre-wrap;  
     word-wrap: break-word;     
     overflow-y: auto;
-    max-height: calc(100vh - 24rem);
+    max-height: calc(100vh - 32rem);
 }
 
 .editor {
