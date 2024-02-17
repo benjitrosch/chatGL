@@ -101,6 +101,7 @@ app.get("/api/ai", async (req, res) => {
     const prompt = req.query['prompt']
     const shader = req.query['shader']
 
+    const decodedPrompt = decodeURI(prompt)
     const decodedShader = Buffer.from(decodeURIComponent(shader), 'base64').toString('utf-8')
 
     res.writeHead(200, {
@@ -120,7 +121,7 @@ app.get("/api/ai", async (req, res) => {
                 })),
                 {
                     role: "user",
-                    content: getShaderContext(minifyShaderCode(decodedShader)) + '\n' + createPrompt(prompt),
+                    content: getShaderContext(minifyShaderCode(decodedShader)) + '\n' + createPrompt(decodedPrompt),
                 }
             ],
             stream: true,
