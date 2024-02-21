@@ -83,6 +83,10 @@ pre {
     height: 100%;
 }
 
+cite {
+    float: right;
+}
+
 input[type=text].prompt {
     font-family: var(--font-family);
     font-size: 24px;

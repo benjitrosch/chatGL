@@ -18,11 +18,12 @@
         <dialog id="modal" class="modal" aria-labelledby="modal-title" aria-describedby="modal-description">
             <div class="panel panel-forty" id="modal-panel" style="max-width: 660px;">
                 <h2 id="modal-title" style="margin-top: 0;">welcome to chatGL.</h2>
-                <q id="modal-description">a shader is a program that tells your graphics card how to draw things on a screen using math.</q>
-                <cite>chatgpt, asked "explain shaders but dumb"</cite>
-
-                <p>unfortunately, computers don't know what looks good.</p>
-                <p>try describing a feeling, like "eating spaghetti" or "being a hot dog." after all, the ai has never eaten spaghetti or been a hot dog. probably.</p>
+                <p>welcome to chatgl, an app that uses gpt-4 to generate webgl fragment shaders based on prompts.</p>
+                <blockquote>
+                    <q id="modal-description">a shader is a program that tells your graphics card how to draw things on a screen using math.</q>
+                    <cite>— chatgpt</cite>
+                </blockquote>
+                <p>try describing a feeling, like "eating spaghetti" or "being a hot dog" and the ai will interpret this concept into shader code. keep in mind that the ai has never eaten spaghetti or been a hot dog. probably.</p>
                 <button class="button" id="modal-button" aria-label="Acknowledge and enter">
                     <code>[A]</code> acknowledge
                 </button>
@@ -50,7 +51,7 @@
                     >
                 </div>
             </div>
-            <fieldset class="panel panel-forty" id="config-panel">
+            <fieldset class="panel panel-forty panel-hidden" id="config-panel">
                 <input type="checkbox" id="toggle-panel-c" class="toggle-panel">
                 <legend class="panel-legend">
                     <label
